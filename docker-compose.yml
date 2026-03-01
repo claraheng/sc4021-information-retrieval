@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  solr:
+    image: solr:9.4
+    container_name: solr_db
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr_data:/var/solr
+    # This command automatically creates a core named 'opinion_engine' on startup
+    command:
+      - solr-precreate
+      - opinion_engine
+
+volumes:
+  solr_data:
