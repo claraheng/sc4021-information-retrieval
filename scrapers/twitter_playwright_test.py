@@ -1,13 +1,16 @@
 import asyncio
+import csv
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
 
 from playwright.async_api import async_playwright, TimeoutError as PWTimeout
 
-QUERY = '("electric vehicles" OR "electric vehicle" OR "electric car" OR "electric cars" OR "EV charging" OR "battery electric") lang:en -filter:replies'
-MAX_RECORDS = 10
+QUERY = '("electric vehicles" OR "electric vehicle" OR "electric car" OR "electric cars" OR "EV charging" OR "battery electric") lang:en filter:replies'
+MAX_RECORDS = 400
 
 STATE_DIR = Path(__file__).parent / ".pw_profile"  # persistent browser profile dir
+OUTPUT_DIR = Path(__file__).parent
 
 
 async def is_logged_in(page) -> bool:
@@ -33,6 +36,23 @@ async def ensure_logged_in(page):
     await page.goto("https://x.com/i/flow/login", wait_until="load", timeout=60_000)
     await page.wait_for_selector('nav[role="navigation"]', timeout=300_000)
     print("Login detected ✅")
+
+
+def save_results_to_csv(results, output_path: Path):
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    fieldnames = ["id", "author", "text", "url"]
+    with output_path.open("w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(results)
+
+    print(f"Saved {len(results)} tweets to CSV: {output_path}")
+
+
+def build_output_csv_path() -> Path:
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    return OUTPUT_DIR / f"twitter_results_{timestamp}.csv"
 
 
 async def main():
@@ -90,6 +110,9 @@ async def main():
 
                 await page.mouse.wheel(0, 2500)
                 await page.wait_for_timeout(1500)
+
+            output_csv = build_output_csv_path()
+            save_results_to_csv(results, output_csv)
 
             print("\n===== TEST OUTPUT (10 Tweets) =====\n")
             for i, t in enumerate(results, 1):
