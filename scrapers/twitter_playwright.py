@@ -7,7 +7,7 @@ from urllib.parse import quote
 from playwright.async_api import async_playwright, TimeoutError as PWTimeout
 
 QUERY = '("electric vehicles" OR "electric vehicle" OR "electric car" OR "electric cars" OR "EV charging" OR "battery electric") lang:en filter:replies'
-MAX_RECORDS = 400
+MAX_RECORDS = 2500
 
 STATE_DIR = Path(__file__).parent / ".pw_profile"  # persistent browser profile dir
 OUTPUT_DIR = Path(__file__).parent
