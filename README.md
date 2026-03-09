@@ -8,3 +8,6 @@ Our group built an opinion search engine on the topic of ... The system enables 
 - Classification
 
 ## How to Run
+1. Open Docker application
+2. Run `docker compose up -d` in terminal
+3. View Solr dashboard at http://localhost:8983/solr/#/
