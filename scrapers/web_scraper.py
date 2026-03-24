@@ -96,38 +96,43 @@ def scrape_teambhp(page):
     reviews = []
     
     # --- Step 1: Discover Thread URLs ---
-    forum_index_url = "https://www.team-bhp.com/forum/search.php?searchid=76906505"
-    print(f"Fetching forum index: {forum_index_url}")
-    page.goto(forum_index_url)
-    time.sleep(random.uniform(4, 6)) # Allow time for CloudFlare and page load
-    
-    soup = BeautifulSoup(page.content(), "html.parser")
-    links = soup.find_all("a", href=True)
-    
-    # Filter for relevant thread links in the electric-cars subforum or URLs containing thread IDs
-    thread_links = [l for l in links if ("electric-cars/" in l["href"] or "showthread.php" in l["href"]) and (".html" in l["href"] or "t=" in l["href"])]
-    
     unique_threads = set()
-    for link in thread_links:
-        href = link["href"]
-        # Filter out links to specific pages of a thread, lastপোস্ট, or post anchors
-        if "page" not in href and "lastpost" not in href and "newpost" not in href and "#post" not in href:
-            # Clean up highlight params and other noise
-            href = href.split("?")[0]
-            # Ensure it is a full URL. If it's relative, it might be relative to /forum/
-            if not href.startswith("http"):
-                if href.startswith("/"):
-                    href = "https://www.team-bhp.com" + href
-                else:
-                    href = "https://www.team-bhp.com/forum/" + href
-            unique_threads.add(href)
+    # Scrape first 10 pages of the electric cars subforum
+    for page_num in range(1, 11):
+        if page_num == 1:
+            forum_index_url = "https://www.team-bhp.com/forum/electric-cars/"
+        else:
+            forum_index_url = f"https://www.team-bhp.com/forum/electric-cars/index{page_num}.html"
             
-    # Convert to list and take top N threads (e.g., first 10 for "juicy" recent active threads)
-    urls = list(unique_threads)[:100]
-    print(f"Found {len(unique_threads)} unique threads. Scraping the first {len(urls)}...")
+        print(f"Fetching forum index page {page_num}: {forum_index_url}")
+        page.goto(forum_index_url)
+        time.sleep(random.uniform(4, 6)) # Allow time for CloudFlare and page load
+        
+        soup = BeautifulSoup(page.content(), "html.parser")
+        links = soup.find_all("a", href=True)
+        
+        # Filter for relevant thread links in the electric-cars subforum
+        thread_links = [l for l in links if "electric-cars/" in l["href"] and ".html" in l["href"]]
+        
+        for link in thread_links:
+            href = link["href"]
+            # Filter out index pages, specific pages of a thread, lastpost, etc.
+            if "index" not in href.split("/")[-1] and "page" not in href and "lastpost" not in href and "newpost" not in href and "#post" not in href:
+                href = href.split("?")[0]
+                if not href.startswith("http"):
+                    if href.startswith("/"):
+                        href = "https://www.team-bhp.com" + href
+                    else:
+                        href = "https://www.team-bhp.com/forum/" + href
+                unique_threads.add(href)
+                
+    # Convert to list and take top N threads to not take forever but get >500 records.
+    # 50 threads * ~15 posts = ~750 records
+    unique_threads = list(unique_threads)[:50]
+    print(f"Found unique threads. Scraping {len(unique_threads)} threads...")
     
     # --- Step 2: Scrape Discovered Threads ---
-    for url in urls:
+    for url in unique_threads:
         print(f"Fetching Team-BHP Thread: {url}")
         page.goto(url)
         time.sleep(random.uniform(3, 5)) # Human delay
@@ -152,10 +157,21 @@ def scrape_teambhp(page):
                     "stars": None # Forums don't have stars! We will auto-label this via ML later
                 })
             
-    with open(f"{OUTPUT_DIR}/teambhp.json", "w") as f:
-        json.dump(reviews, f, indent=4)
+    output_file = f"{OUTPUT_DIR}/teambhp.json"
+    existing_reviews = []
+    if os.path.exists(output_file):
+        with open(output_file, "r") as f:
+            try:
+                existing_reviews = json.load(f)
+            except json.JSONDecodeError:
+                pass
+                
+    existing_reviews.extend(reviews)
+    
+    with open(output_file, "w") as f:
+        json.dump(existing_reviews, f, indent=4)
         
-    print(f"Extracted {len(reviews)} discussions from Team-BHP.")
+    print(f"Extracted {len(reviews)} new discussions from Team-BHP. Total records now {len(existing_reviews)}.")
     return reviews
 
 # ---------------------------------------------------------
