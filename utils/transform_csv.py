@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import re
 from pathlib import Path
 from typing import Iterable
@@ -289,8 +290,8 @@ def detect_text_column(fieldnames: Iterable[str]) -> str:
     )
 
 
-def transform_file(input_path: Path, output_path: Path) -> None:
-    with input_path.open("r", encoding="utf-8", newline="") as f_in:
+def extract_text_rows(input_path: Path) -> list[dict[str, str]]:
+    with input_path.open("r", encoding="utf-8-sig", newline="") as f_in:
         reader = csv.DictReader(f_in)
         if not reader.fieldnames:
             raise ValueError(f"Input file has no header: {input_path}")
@@ -301,23 +302,31 @@ def transform_file(input_path: Path, output_path: Path) -> None:
             text = (row.get(text_col) or "").strip()
             if not text:
                 continue
+            rows.append({"text": text})
+    return rows
 
-            subjectivity = infer_subjectivity(text)
-            existing_concept = (row.get("Concept") or "").strip()
-            sentiment = infer_sentiment(text, subjectivity)
 
-            concept = existing_concept if existing_concept else infer_concept(text)
-            country = infer_country(text)
+def transform_file(input_path: Path, output_path: Path) -> None:
+    text_rows = extract_text_rows(input_path)
 
-            rows.append(
-                {
-                    "Text": text,
-                    "Sentiment": sentiment,
-                    "Concept": concept,
-                    "Subjective/objective": subjectivity,
-                    "Country": country,
-                }
-            )
+    rows = []
+    for row in text_rows:
+        text = row["text"]
+        subjectivity = infer_subjectivity(text)
+        sentiment = infer_sentiment(text, subjectivity)
+
+        concept = infer_concept(text)
+        country = infer_country(text)
+
+        rows.append(
+            {
+                "Text": text,
+                "Sentiment": sentiment,
+                "Concept": concept,
+                "Subjective/objective": subjectivity,
+                "Country": country,
+            }
+        )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8", newline="") as f_out:
@@ -333,6 +342,29 @@ def transform_file(input_path: Path, output_path: Path) -> None:
         )
         writer.writeheader()
         writer.writerows(rows)
+
+
+def convert_files_to_json(
+    input_paths: list[Path], output_path: Path, platform: str, append: bool
+) -> None:
+    existing: list[dict[str, str]] = []
+    if append and output_path.exists():
+        with output_path.open("r", encoding="utf-8") as f_in:
+            loaded = json.load(f_in)
+            if not isinstance(loaded, list):
+                raise ValueError(f"Expected JSON array in {output_path}")
+            existing = loaded
+
+    new_rows: list[dict[str, str]] = []
+    for input_path in input_paths:
+        for row in extract_text_rows(input_path):
+            new_rows.append({"text": row["text"], "platform": platform})
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as f_out:
+        json.dump(existing + new_rows, f_out, indent=2, ensure_ascii=False)
+
+    print(f"Added {len(new_rows)} rows to {output_path}")
 
 
 def main() -> None:
@@ -351,10 +383,42 @@ def main() -> None:
         default="files/transformed",
         help="Directory for transformed CSV outputs (default: files/transformed)",
     )
+    parser.add_argument(
+        "--json-output",
+        help="Write extracted comments as JSON to this file.",
+    )
+    parser.add_argument(
+        "--platform",
+        default="youtube",
+        help="Platform name to use with --json-output (default: youtube)",
+    )
+    parser.add_argument(
+        "--append",
+        action="store_true",
+        help="Append to an existing JSON array when used with --json-output.",
+    )
     args = parser.parse_args()
 
     input_path = Path(args.input)
     output_dir = Path(args.output_dir)
+
+    if args.json_output:
+        if input_path.is_file():
+            input_files = [input_path]
+        elif input_path.is_dir():
+            input_files = sorted(input_path.glob("*.csv"))
+            if not input_files:
+                raise FileNotFoundError(f"No CSV files found in directory: {input_path}")
+        else:
+            raise FileNotFoundError(f"Input path not found: {input_path}")
+
+        convert_files_to_json(
+            input_files,
+            Path(args.json_output),
+            platform=args.platform,
+            append=args.append,
+        )
+        return
 
     if input_path.is_file():
         out_file = output_dir / f"{input_path.stem}_transformed.csv"

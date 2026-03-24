@@ -15,7 +15,7 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 
 AUTO_LABELED_PATH = OUTPUT_DIR / "auto_labeled_ev_tweets.json"
 REVIEW_PATH = OUTPUT_DIR / "ev_tweets_for_manual_review.json"
-CLEANED_NEW_DATA_PATH = OUTPUT_DIR / "cleaned_new_scraped_tweets.json"
+CLEANED_NEW_DATA_PATH = OUTPUT_DIR / "cleaned_text.json"
 
 
 # =========================================================
