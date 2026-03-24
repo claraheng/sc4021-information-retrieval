@@ -4,3 +4,5 @@ __pycache__/
 scrapers/.pw_profile/
 files/
 .DS_Store
+.env-local
+utils/venv
