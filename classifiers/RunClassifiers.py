@@ -22,7 +22,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--input-file",
-        default=str(CLASSIFIERS_DIR / "data" / "eval_sample.xls"),
+        default=str(CLASSIFIERS_DIR / "data" / "eval.xls"),
         help="Path to the shared labelled input file (.xls/.xlsx tab text, or .csv)",
     )
     args = parser.parse_args()

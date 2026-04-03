@@ -13,12 +13,18 @@ def load_data(path: str) -> pd.DataFrame:
 
     if input_path.suffix.lower() in {".xls", ".xlsx"}:
         try:
-            # In this project, eval_sample.xls is tab-separated text.
-            df = pd.read_csv(input_path, sep="\t", encoding="latin1")
-        except Exception as exc:
-            raise ValueError(
-                f"Could not read '{input_path}' as tab-separated text. If it is comma-separated, rename it to .csv."
-            ) from exc
+            engine = "xlrd" if input_path.suffix.lower() == ".xls" else "openpyxl"
+            df = pd.read_excel(input_path, engine=engine)
+        except Exception:
+            try:
+                df = pd.read_csv(input_path, sep="\t", encoding="latin1")
+            except Exception:
+                try:
+                    df = pd.read_csv(input_path, encoding="latin1")
+                except Exception as exc:
+                    raise ValueError(
+                        f"Could not read '{input_path}' as Excel or delimited text."
+                    ) from exc
     else:
         df = pd.read_csv(input_path)
 

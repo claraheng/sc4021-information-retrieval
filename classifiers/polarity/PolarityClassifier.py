@@ -10,9 +10,6 @@ import time
 from polarity_common import load_data, prepare_opinionated_data, build_model
 
 
-CLASSIFIERS_DIR = Path(__file__).resolve().parents[1]
-
-DEFAULT_DATA_PATH = CLASSIFIERS_DIR / "data" / "eval_sample.xls"
 DEFAULT_MODEL_PATH = Path(__file__).with_name("polarity_model.joblib")
 
 
@@ -60,7 +57,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--input-csv",
-        default=str(DEFAULT_DATA_PATH),
+        required=True,
         help="Path to the labelled file (.xls/.xlsx tab text, or .csv)"
     )
     parser.add_argument(

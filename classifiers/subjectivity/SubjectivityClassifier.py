@@ -10,9 +10,6 @@ from sklearn.model_selection import train_test_split
 from subjectivity_common import build_model, load_data, prepare_subjectivity_data
 
 
-CLASSIFIERS_DIR = Path(__file__).resolve().parents[1]
-
-DEFAULT_INPUT_PATH = CLASSIFIERS_DIR / "data" / "eval_sample.xls"
 DEFAULT_MODEL_PATH = Path(__file__).with_name("subjectivity_model.joblib")
 
 
@@ -57,7 +54,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--input-file",
-        default=str(DEFAULT_INPUT_PATH),
+        required=True,
         help="Path to labeled input (.xls/.xlsx as tab text, or .csv)",
     )
     parser.add_argument(
