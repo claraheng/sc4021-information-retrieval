@@ -4,7 +4,7 @@ import time
 
 import joblib
 import pandas as pd
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 from subjectivity_common import build_model, load_data, prepare_subjectivity_data
@@ -32,9 +32,20 @@ def train_subjectivity_model(df: pd.DataFrame):
 
     start_time = time.time()
     y_pred = pipeline.predict(X_test)
+    y_proba = pipeline.predict_proba(X_test)
     classification_time = time.time() - start_time
 
+    classes = list(pipeline.classes_)
+    if len(classes) == 2:
+        positive_label = "opinionated" if "opinionated" in classes else classes[1]
+        positive_idx = classes.index(positive_label)
+        y_true_binary = (y_test == positive_label).astype(int)
+        auc_score = roc_auc_score(y_true_binary, y_proba[:, positive_idx])
+    else:
+        auc_score = roc_auc_score(y_test, y_proba, multi_class="ovr", average="weighted")
+
     print(f"\nAccuracy: {accuracy_score(y_test, y_pred):.2f}")
+    print(f"ROC-AUC: {auc_score:.4f}")
     print("\nClassification Report:")
     print(classification_report(y_test, y_pred))
     print("\nConfusion Matrix:")

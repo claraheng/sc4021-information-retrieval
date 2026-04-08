@@ -4,7 +4,7 @@ from pathlib import Path
 import joblib
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_auc_score
 import time
 
 from polarity_common import load_data, prepare_opinionated_data, build_model
@@ -31,10 +31,21 @@ def train_polarity_model(df: pd.DataFrame):
     # Measure scalability: predictions on test set
     start_time = time.time()
     preds = model.predict(X_test)
+    probas = model.predict_proba(X_test)
     prediction_time = time.time() - start_time
+
+    classes = list(model.classes_)
+    if len(classes) == 2:
+        positive_label = classes[1]
+        positive_idx = classes.index(positive_label)
+        y_true_binary = (y_test == positive_label).astype(int)
+        auc_score = roc_auc_score(y_true_binary, probas[:, positive_idx])
+    else:
+        auc_score = roc_auc_score(y_test, probas, multi_class="ovr", average="weighted")
 
     print("\n=== Polarity Detection Evaluation ===")
     print("Accuracy:", accuracy_score(y_test, preds))
+    print(f"ROC-AUC: {auc_score:.4f}")
     print("\nClassification Report:")
     print(classification_report(y_test, preds))
     print("\nConfusion Matrix:")
