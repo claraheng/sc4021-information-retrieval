@@ -1,18 +1,11 @@
 from pathlib import Path
 
-import nltk
 import pandas as pd
-import re
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
-
-nltk.download("punkt", quiet=True)
-nltk.download("stopwords", quiet=True)
-
+from preprocessing import preprocess_text
 
 def load_data(path: str) -> pd.DataFrame:
     input_path = Path(path)
@@ -45,29 +38,37 @@ def load_data(path: str) -> pd.DataFrame:
     df["subjectivity"] = df["subjectivity"].fillna("").astype(str).str.strip().str.lower()
     df["polarity"] = df["polarity"].fillna("").astype(str).str.strip().str.lower()
     df = df[df["text"] != ""].copy()
+
     return df
 
 
-def preprocess_text(text: str) -> str:
-    text = text.lower()
-    text = re.sub(r"[^a-zA-Z\s]", "", text)
-    tokens = word_tokenize(text)
-    stop_words = set(stopwords.words("english"))
-    tokens = [word for word in tokens if word not in stop_words]
-    return " ".join(tokens)
+def prepare_opinionated_data(df: pd.DataFrame) -> pd.DataFrame:
+    opinion_df = df[df["subjectivity"] == "opinionated"].copy()
+    valid_labels = ["positive", "negative", "neutral"]
+    opinion_df = opinion_df[opinion_df["polarity"].isin(valid_labels)].copy()
 
+    if opinion_df.empty:
+        raise ValueError("No opinionated rows with valid polarity labels found.")
 
-def prepare_subjectivity_data(df: pd.DataFrame) -> pd.DataFrame:
-    subjectivity_df = df[df["subjectivity"].isin(["neutral", "opinionated"])].copy()
-    if subjectivity_df.empty:
-        raise ValueError("No rows with valid subjectivity labels found.")
-
-    subjectivity_df["clean_text"] = subjectivity_df["text"].apply(preprocess_text)
-    return subjectivity_df
+    opinion_df["clean_text"] = opinion_df["text"].apply(preprocess_text)
+    return opinion_df
 
 
 def build_model() -> Pipeline:
     return Pipeline([
-        ("tfidf", TfidfVectorizer(max_features=1000, ngram_range=(1, 2))),
-        ("clf", LogisticRegression(random_state=42)),
+        (
+            "tfidf",
+            TfidfVectorizer(
+                ngram_range=(1, 2),
+                max_features=10000,
+            ),
+        ),
+        (
+            "clf",
+            LogisticRegression(
+                max_iter=1000,
+                class_weight="balanced",
+                random_state=42,
+            ),
+        ),
     ])

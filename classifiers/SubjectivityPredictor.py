@@ -10,8 +10,8 @@ from subjectivity_common import preprocess_text
 CLASSIFIERS_DIR = Path(__file__).resolve().parents[1]
 
 DEFAULT_MODEL_PATH = Path(__file__).with_name("subjectivity_model.joblib")
-DEFAULT_INPUT_TEXTS_PATH = CLASSIFIERS_DIR / "data" / "texts_to_predict.csv"
-DEFAULT_OUTPUT_PATH = CLASSIFIERS_DIR / "data" / "predictions.csv"
+DEFAULT_INPUT_TEXTS_PATH = CLASSIFIERS_DIR / "texts_to_predict.csv"
+DEFAULT_OUTPUT_PATH = CLASSIFIERS_DIR / "predictions.csv"
 
 
 def load_input_texts(input_csv: str) -> pd.Series:

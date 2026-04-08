@@ -1,0 +1,4 @@
+text,subjectivity,subjectivity_confidence,polarity,polarity_confidence
+vehicles that use electricity are okay,opinionated,0.6517,negative,0.469
+EVs suck,neutral,0.5746,,
+EVs rock,neutral,0.5746,,

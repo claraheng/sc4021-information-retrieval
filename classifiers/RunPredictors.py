@@ -7,8 +7,8 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent
 CLASSIFIERS_DIR = ROOT_DIR
 
-SUBJECTIVITY_PREDICTOR = CLASSIFIERS_DIR / "subjectivity" / "SubjectivityPredictor.py"
-POLARITY_PREDICTOR = CLASSIFIERS_DIR / "polarity" / "PolarityPredictor.py"
+SUBJECTIVITY_PREDICTOR = CLASSIFIERS_DIR / "SubjectivityPredictor.py"
+POLARITY_PREDICTOR = CLASSIFIERS_DIR / "PolarityPredictor.py"
 
 
 def run_command(command):
@@ -22,12 +22,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--input-csv",
-        default=str(CLASSIFIERS_DIR / "data" / "texts_to_predict.csv"),
+        default=str(CLASSIFIERS_DIR / "texts_to_predict.csv"),
         help="Path to input CSV containing a 'text' column",
     )
     parser.add_argument(
         "--predictions-csv",
-        default=str(CLASSIFIERS_DIR / "data" / "predictions.csv"),
+        default=str(CLASSIFIERS_DIR / "predictions.csv"),
         help="Path to shared predictions CSV",
     )
     args = parser.parse_args()

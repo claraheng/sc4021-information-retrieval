@@ -5,6 +5,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
+from preprocessing import preprocess_text
 
 def load_data(path: str) -> pd.DataFrame:
     input_path = Path(path)
@@ -37,19 +38,16 @@ def load_data(path: str) -> pd.DataFrame:
     df["subjectivity"] = df["subjectivity"].fillna("").astype(str).str.strip().str.lower()
     df["polarity"] = df["polarity"].fillna("").astype(str).str.strip().str.lower()
     df = df[df["text"] != ""].copy()
-
     return df
 
 
-def prepare_opinionated_data(df: pd.DataFrame) -> pd.DataFrame:
-    opinion_df = df[df["subjectivity"] == "opinionated"].copy()
-    valid_labels = ["positive", "negative", "neutral"]
-    opinion_df = opinion_df[opinion_df["polarity"].isin(valid_labels)].copy()
+def prepare_subjectivity_data(df: pd.DataFrame) -> pd.DataFrame:
+    subjectivity_df = df[df["subjectivity"].isin(["neutral", "opinionated"])].copy()
+    if subjectivity_df.empty:
+        raise ValueError("No rows with valid subjectivity labels found.")
 
-    if opinion_df.empty:
-        raise ValueError("No opinionated rows with valid polarity labels found.")
-
-    return opinion_df
+    subjectivity_df["clean_text"] = subjectivity_df["text"].apply(preprocess_text)
+    return subjectivity_df
 
 
 def build_model() -> Pipeline:
@@ -57,8 +55,6 @@ def build_model() -> Pipeline:
         (
             "tfidf",
             TfidfVectorizer(
-                lowercase=True,
-                stop_words="english",
                 ngram_range=(1, 2),
                 max_features=10000,
             ),
@@ -68,6 +64,7 @@ def build_model() -> Pipeline:
             LogisticRegression(
                 max_iter=1000,
                 class_weight="balanced",
+                random_state=42,
             ),
         ),
     ])

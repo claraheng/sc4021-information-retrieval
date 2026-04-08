@@ -7,8 +7,8 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent
 CLASSIFIERS_DIR = ROOT_DIR
 
-SUBJECTIVITY_TRAINER = CLASSIFIERS_DIR / "subjectivity" / "SubjectivityClassifier.py"
-POLARITY_TRAINER = CLASSIFIERS_DIR / "polarity" / "PolarityClassifier.py"
+SUBJECTIVITY_TRAINER = CLASSIFIERS_DIR / "SubjectivityClassifier.py"
+POLARITY_TRAINER = CLASSIFIERS_DIR / "PolarityClassifier.py"
 
 
 def run_command(command):
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--input-file",
-        default=str(CLASSIFIERS_DIR / "data" / "eval.xls"),
+        default=str(CLASSIFIERS_DIR / "eval.xls"),
         help="Path to the shared labelled input file (.xls/.xlsx tab text, or .csv)",
     )
     args = parser.parse_args()

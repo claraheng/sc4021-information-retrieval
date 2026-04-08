@@ -8,8 +8,8 @@ import pandas as pd
 CLASSIFIERS_DIR = Path(__file__).resolve().parents[1]
 
 DEFAULT_MODEL_PATH = Path(__file__).with_name("polarity_model.joblib")
-DEFAULT_INPUT_TEXTS_PATH = CLASSIFIERS_DIR / "data" / "predictions.csv"
-DEFAULT_OUTPUT_PATH = CLASSIFIERS_DIR / "data" / "predictions.csv"
+DEFAULT_INPUT_TEXTS_PATH = CLASSIFIERS_DIR / "predictions.csv"
+DEFAULT_OUTPUT_PATH = CLASSIFIERS_DIR / "predictions.csv"
 
 
 def load_prediction_table(input_csv: str) -> pd.DataFrame:
