@@ -48,9 +48,6 @@ def _append_prediction_report(input_csv: str, predictions_csv: str, subj_stdout:
     pred_path = Path(predictions_csv)
     total_rows = None
     opinionated_rows = None
-    subjectivity_conf_mean = None
-    polarity_conf_mean = None
-    polarity_filled_rows = None
 
     if pred_path.exists():
         df = pd.read_csv(pred_path)
@@ -59,14 +56,6 @@ def _append_prediction_report(input_csv: str, predictions_csv: str, subj_stdout:
         if "subjectivity" in df.columns:
             subj = df["subjectivity"].fillna("").astype(str).str.strip().str.lower()
             opinionated_rows = int((subj == "opinionated").sum())
-
-        if "subjectivity_confidence" in df.columns:
-            subjectivity_conf_mean = pd.to_numeric(df["subjectivity_confidence"], errors="coerce").mean()
-
-        if "polarity_confidence" in df.columns:
-            pol_conf = pd.to_numeric(df["polarity_confidence"], errors="coerce")
-            polarity_conf_mean = pol_conf.mean()
-            polarity_filled_rows = int(pol_conf.notna().sum())
 
     lines = [
         "",
@@ -85,9 +74,6 @@ def _append_prediction_report(input_csv: str, predictions_csv: str, subj_stdout:
         f"- Total rows in predictions file: {total_rows if total_rows is not None else 'N/A'}",
         f"- Opinionated rows in predictions file: {opinionated_rows if opinionated_rows is not None else 'N/A'}",
         f"- Opinionated rows predicted by polarity stage: {opinionated_predicted if opinionated_predicted is not None else 'N/A'}",
-        f"- Rows with polarity confidence: {polarity_filled_rows if polarity_filled_rows is not None else 'N/A'}",
-        f"- Mean subjectivity confidence: {subjectivity_conf_mean:.4f}" if subjectivity_conf_mean is not None and not pd.isna(subjectivity_conf_mean) else "- Mean subjectivity confidence: N/A",
-        f"- Mean polarity confidence (predicted rows): {polarity_conf_mean:.4f}" if polarity_conf_mean is not None and not pd.isna(polarity_conf_mean) else "- Mean polarity confidence (predicted rows): N/A",
         "",
         "### Notes",
         "- Prediction run does not compute precision/recall/F1 by itself because labels are not available for new unlabeled input rows.",

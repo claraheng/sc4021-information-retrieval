@@ -64,15 +64,11 @@ if __name__ == "__main__":
     clean_texts = texts.apply(preprocess_text)
 
     predictions = model.predict(clean_texts)
-    probabilities = model.predict_proba(clean_texts)
-    confidences = probabilities.max(axis=1).round(4)
     output_df = pd.DataFrame(
         {
             "text": texts,
             "subjectivity": predictions,
-            "subjectivity_confidence": confidences,
             "polarity": "",
-            "polarity_confidence": "",
         }
     )
     output_df.to_csv(args.output_csv, index=False)

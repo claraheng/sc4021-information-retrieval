@@ -29,12 +29,8 @@ def load_prediction_table(input_csv: str) -> pd.DataFrame:
         raise ValueError("Input CSV must contain a 'text' column.")
     if "subjectivity" not in df.columns:
         raise ValueError("Input CSV must contain a 'subjectivity' column.")
-    if "subjectivity_confidence" not in df.columns:
-        df["subjectivity_confidence"] = ""
     if "polarity" not in df.columns:
         df["polarity"] = ""
-    if "polarity_confidence" not in df.columns:
-        df["polarity_confidence"] = ""
 
     df["text"] = df["text"].fillna("").astype(str).str.strip()
     df["subjectivity"] = df["subjectivity"].fillna("").astype(str).str.strip().str.lower()
@@ -77,17 +73,12 @@ if __name__ == "__main__":
 
     if not opinionated_texts.empty:
         predictions = model.predict(opinionated_texts)
-        probabilities = model.predict_proba(opinionated_texts)
-        confidences = probabilities.max(axis=1).round(4)
         df.loc[opinionated_mask, "polarity"] = predictions
-        df.loc[opinionated_mask, "polarity_confidence"] = confidences
 
     output_df = df[[
         "text",
         "subjectivity",
-        "subjectivity_confidence",
         "polarity",
-        "polarity_confidence",
     ]].copy()
     output_df.to_csv(args.output_csv, index=False)
 

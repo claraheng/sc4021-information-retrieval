@@ -81,3 +81,66 @@ weighted avg       0.69      0.70      0.68       186
 ### Notes
 - Prediction run does not compute precision/recall/F1 by itself because labels are not available for new unlabeled input rows.
 - Use the training section above (RunClassifiers) for model evaluation metrics on held-out labeled data.
+
+## RunPredictors
+- Timestamp: 2026-04-08 23:39:45
+- Input text CSV: /Users/claraheng/Desktop/GitHub/sc4021-information-retrieval/classifiers/texts_to_predict.csv
+- Output predictions CSV: /Users/claraheng/Desktop/GitHub/sc4021-information-retrieval/classifiers/predictions.csv
+
+### Prediction Pipeline Summary
+- Stage 1: Subjectivity prediction for all input rows.
+- Stage 2: Polarity prediction only for rows predicted as opinionated.
+
+### Prediction Process Metrics
+- End-to-end subjectivity predictor runtime: 10.9618 s
+- End-to-end polarity predictor runtime: 5.3117 s
+- Total rows in predictions file: 9370
+- Opinionated rows in predictions file: 9224
+- Opinionated rows predicted by polarity stage: 9224
+- Rows with polarity confidence: 9224
+- Mean subjectivity confidence: 0.7190
+- Mean polarity confidence (predicted rows): 0.4643
+
+### Notes
+- Prediction run does not compute precision/recall/F1 by itself because labels are not available for new unlabeled input rows.
+- Use the training section above (RunClassifiers) for model evaluation metrics on held-out labeled data.
+
+## RunPredictors
+- Timestamp: 2026-04-08 23:45:01
+- Input text CSV: /Users/claraheng/Desktop/GitHub/sc4021-information-retrieval/classifiers/texts_to_predict.csv
+- Output predictions CSV: /Users/claraheng/Desktop/GitHub/sc4021-information-retrieval/classifiers/predictions.csv
+
+### Prediction Pipeline Summary
+- Stage 1: Subjectivity prediction for all input rows.
+- Stage 2: Polarity prediction only for rows predicted as opinionated.
+
+### Prediction Process Metrics
+- End-to-end subjectivity predictor runtime: 12.1960 s
+- End-to-end polarity predictor runtime: 3.8706 s
+- Total rows in predictions file: 9370
+- Opinionated rows in predictions file: 9224
+- Opinionated rows predicted by polarity stage: 9224
+
+### Notes
+- Prediction run does not compute precision/recall/F1 by itself because labels are not available for new unlabeled input rows.
+- Use the training section above (RunClassifiers) for model evaluation metrics on held-out labeled data.
+
+## RunPredictors
+- Timestamp: 2026-04-08 23:46:18
+- Input text CSV: /Users/claraheng/Desktop/GitHub/sc4021-information-retrieval/classifiers/texts_to_predict.csv
+- Output predictions CSV: /Users/claraheng/Desktop/GitHub/sc4021-information-retrieval/classifiers/predictions.csv
+
+### Prediction Pipeline Summary
+- Stage 1: Subjectivity prediction for all input rows.
+- Stage 2: Polarity prediction only for rows predicted as opinionated.
+
+### Prediction Process Metrics
+- End-to-end subjectivity predictor runtime: 12.4163 s
+- End-to-end polarity predictor runtime: 6.1781 s
+- Total rows in predictions file: 9370
+- Opinionated rows in predictions file: 9224
+- Opinionated rows predicted by polarity stage: 9224
+
+### Notes
+- Prediction run does not compute precision/recall/F1 by itself because labels are not available for new unlabeled input rows.
+- Use the training section above (RunClassifiers) for model evaluation metrics on held-out labeled data.

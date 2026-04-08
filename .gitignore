@@ -6,4 +6,3 @@ files/
 .DS_Store
 .env-local
 utils/venv
-classifiers/data/eval.xls
