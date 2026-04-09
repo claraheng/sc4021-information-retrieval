@@ -1,0 +1,353 @@
+SC4021 Information Retrieval Project Context
+Last updated: 2026-04-09
+
+Purpose
+This file is a durable project memory for future work. It should let an agent or developer understand the repo quickly, identify the current "main path" through the system, and append notable changes over time.
+
+High-Level Summary
+This repository is an EV opinion search engine project built around four major concerns:
+1. Data collection from multiple platforms.
+2. Dataset collation and preprocessing into one master corpus.
+3. Search/indexing with Solr and a Flask UI.
+4. Opinion classification with separate subjectivity and polarity models.
+
+The repo contains both:
+- A newer JSON-based pipeline centered on `data/output/master_corpus.json`, Solr core `ev_reviews`, and the Flask app in `app.py`.
+- Older prototype scraping/indexing scripts that still refer to a different Solr core, `opinion_engine`.
+
+Current Canonical Runtime Path
+The most coherent current end-to-end path appears to be:
+1. Collect platform JSON files into `data/*.json`.
+2. Run `utils/collate_data.py` to normalize, deduplicate, and build `data/output/master_corpus.json`.
+3. Optionally run `utils/extract_eval.py` to mark 1000 sampled rows as `eval` and export `data/output/eval_workspace.csv` for manual labeling.
+4. Run `utils/ingest_to_solr.py` to wipe and load the master corpus into Solr core `ev_reviews`.
+5. Start Solr via `docker compose up -d`.
+6. Run `app.py` and use the Flask UI on port 8080.
+
+Search App
+Main file: `app.py`
+
+What it does
+- Runs a Flask app on `0.0.0.0:8080`.
+- Connects to Solr core `http://localhost:8983/solr/ev_reviews`.
+- Uses an embedded HTML template instead of separate templates/static assets.
+- Supports:
+  - keyword search
+  - platform filtering through Solr faceting
+  - result count and query time display
+  - display of `source_target`, `platform`, `text`, `stars`, and `dataset_split`
+
+Important implementation notes
+- Empty search defaults to `*:*`.
+- Solr query parser is `edismax`.
+- Search field boosting is `text^2 source_target`.
+- Results page size is fixed to 50.
+- Sentiment filtering is only a UI placeholder and is not wired to model outputs yet.
+
+Infrastructure
+Main file: `docker-compose.yml`
+
+What it does
+- Starts Solr 9.4 in Docker.
+- Exposes port 8983.
+- Precreates core `ev_reviews`.
+- Persists index data in Docker volume `solr_data`.
+
+Important note
+- The active Docker config and Flask app both use `ev_reviews`.
+- Some older scraper scripts still point to `opinion_engine`. Those scripts are out of sync with the current stack unless updated.
+
+Data Layout
+Main source directory: `data/`
+
+Observed JSON datasets
+- `data/bilibili_comments.json`: 1481 rows
+- `data/reddit.json`: 2000 rows
+- `data/teambhp.json`: 1985 rows
+- `data/trustpilot.json`: 612 rows
+- `data/twitter.json`: 2072 rows
+- `data/youtube.json`: 2385 rows
+
+Master corpus
+- `data/output/master_corpus.json`: 10368 rows
+- Split tags currently present:
+  - `corpus`: 9368
+  - `eval`: 1000
+
+Platform distribution in `master_corpus.json`
+- `youtube`: 2385
+- `twitter`: 2024
+- `Reddit`: 1989
+- `Team-BHP`: 1974
+- `bilibili`: 1384
+- `Trustpilot`: 612
+
+Observed common fields in master corpus
+- `id`
+- `text`
+- `platform`
+- `source_target`
+- `dataset_split`
+- sometimes `clean_text`
+- sometimes platform-specific fields like `video_id`, `stars`, etc.
+
+Data Pipeline Details
+Main file: `utils/collate_data.py`
+
+What it does
+- Scans `data/` for JSON files.
+- Applies light microtext normalization:
+  - expands some contractions
+  - expands some EV-specific abbreviations (`ev`, `ice`)
+  - expands `coe`
+  - replaces a few emojis with words
+  - removes URLs and `@mentions`
+- Drops rows with fewer than 4 words after cleaning.
+- Deduplicates by SHA-256 hash of `platform + lower(text)`.
+- Writes standardized records to `data/output/master_corpus.json`.
+- Prints corpus size and total word count, and warns if assignment thresholds are not met.
+
+Important note
+- `collate_data.py` expects all JSON input files directly under `data/`, not nested folders.
+
+Evaluation Set Creation
+Main file: `utils/extract_eval.py`
+
+What it does
+- Loads `data/output/master_corpus.json`.
+- Samples up to 1000 rows with fixed seed 42.
+- Uses TextBlob to generate pre-label guesses for:
+  - subjectivity: `Opinionated` or `Neutral`
+  - polarity: `Positive`, `Negative`, `Neutral`
+- Marks sampled rows as `dataset_split = "eval"` and all others as `corpus`.
+- Rewrites the master JSON in place.
+- Exports a manual annotation CSV to `data/output/eval_workspace.csv`.
+
+Important note
+- This script mutates `master_corpus.json`, so running it changes the source used for Solr ingestion.
+
+Solr Ingestion
+Main file: `utils/ingest_to_solr.py`
+
+What it does
+- Reads `data/output/master_corpus.json`.
+- Deletes all existing Solr documents with `*:*`.
+- Adds the full dataset into Solr.
+
+Important note
+- This is a full replace, not incremental ingestion.
+
+Scraping Layer
+Primary folder: `scrapers/`
+
+Status overview
+- This folder mixes active scripts, one-off collection scripts, and older prototypes.
+- Output format is inconsistent across scripts but generally resolves into platform JSON files later consumed by `collate_data.py`.
+
+Most relevant scraper
+- `scrapers/web_scraper.py`
+
+What it currently does
+- Uses Playwright plus BeautifulSoup.
+- Actively orchestrates Team-BHP scraping in `main()`.
+- Contains additional Trustpilot and other scraper functions, many commented out or disabled.
+- Saves extracted data into `data/raw` according to the script, which does not match the current canonical `data/` input location used by `collate_data.py`.
+
+Important scraper files
+- `scrapers/web_scraper.py`: multipurpose web scraping script, only Team-BHP enabled in `main()`
+- `scrapers/Bilibili_scraper.py`: interactive browser-based comment extraction to Excel, Chinese-language script, not wired into canonical JSON pipeline
+- `scrapers/Translator.py`: translates a Bilibili Excel file into English, standalone utility
+- `scrapers/reddit_scraper.py`: PRAW template with placeholder credentials, returns documents for old Solr-first design
+- `scrapers/linkedin_scraper.py`: Selenium prototype, writes directly to old Solr core `opinion_engine`
+- `scrapers/scraper.py`: old orchestrator for Reddit/X direct-to-Solr flow, also uses `opinion_engine`
+- `scrapers/twitter/`: Twitter/X collection helpers and daily run artifacts
+
+Key architectural conclusion
+- The scraper layer is not fully unified.
+- The repo currently has a stronger downstream pipeline than upstream ingestion discipline.
+- Future cleanup should standardize all scrapers to emit the same JSON schema directly into `data/`.
+
+Classification Layer
+Primary folder: `classifiers/`
+
+What it does
+- Trains two classical ML text models:
+  - subjectivity classifier
+  - polarity classifier
+- Uses TF-IDF + Logistic Regression for both.
+- Stores trained models as `.joblib`.
+- Provides prediction scripts for unlabeled text CSVs.
+- Appends run summaries to `classifiers/report.md`.
+
+Main training flow
+- `classifiers/RunClassifiers.py`
+  - orchestrates both model trainers
+  - appends evaluation metrics to `classifiers/report.md`
+- `classifiers/SubjectivityClassifier.py`
+  - split: 70/30 stratified train/test
+  - trains on `clean_text`
+- `classifiers/PolarityClassifier.py`
+  - split: 80/20 stratified train/test
+  - filters to opinionated rows with valid polarity labels
+
+Shared model definitions
+- `classifiers/subjectivity_common.py`
+- `classifiers/polarity_common.py`
+
+Current modeling choice
+- `TfidfVectorizer(ngram_range=(1, 2), max_features=10000)`
+- `LogisticRegression(max_iter=1000, class_weight="balanced", random_state=42)`
+
+Text preprocessing
+- `classifiers/preprocessing.py`
+- NLTK-based normalization:
+  - contraction expansion
+  - emoticon replacement
+  - repeated-character normalization
+  - URL/mention cleanup
+  - hashtag term preservation
+  - stopword removal with negations retained
+  - lemmatization
+
+Prediction flow
+- `classifiers/RunPredictors.py`
+  - runs subjectivity first
+  - runs polarity only on rows predicted as opinionated
+  - writes/updates `classifiers/predictions.csv`
+  - appends run metadata to `classifiers/report.md`
+
+Current classifier artifacts
+- `classifiers/subjectivity_model.joblib`
+- `classifiers/polarity_model.joblib`
+- `classifiers/predictions.csv`
+- `classifiers/report.md`
+- `classifiers/scalability_results.csv`
+- `classifiers/scalability_graph.png`
+
+Observed latest recorded metrics from `classifiers/report.md`
+- Subjectivity accuracy: 0.92
+- Subjectivity ROC-AUC: 0.7052
+- Polarity accuracy: 0.7043
+- Polarity ROC-AUC: 0.7465
+
+Important mismatch / bug candidate
+- `PolarityClassifier.py` prepares `clean_text` in `prepare_opinionated_data()` but trains on `df["text"]`, not `df["clean_text"]`.
+- `SubjectivityClassifier.py` does train on `clean_text`.
+- This means the two training scripts are inconsistent in whether classifier preprocessing actually feeds the model.
+
+Utility Scripts
+Primary folder: `utils/`
+
+Relevant utilities
+- `utils/collate_data.py`: canonical corpus build step
+- `utils/extract_eval.py`: eval set extraction and prelabeling
+- `utils/ingest_to_solr.py`: full Solr ingestion
+- `utils/semi_auto_label_ev_tweets.py`: heuristic + similarity-based tweet labeling workflow
+- `utils/sklearn_auto_label_ev_tweets.py`: sklearn-based auto-labeling for tweet datasets
+- `utils/semi_auto_label_ev_json.py`, `utils/transform_csv.py`, `utils/merge_csv_vertical.py`: dataset wrangling helpers
+
+Note on utility scope
+- Several utility scripts appear to support separate experiments around tweet labeling and manual review, not the main search application runtime.
+
+Repository State and Conventions
+- Git worktree was clean when this context file was created.
+- There is no obvious dependency manifest in the repo root such as `requirements.txt`, `pyproject.toml`, or `Pipfile`.
+- There is a local `utils/venv/` directory inside the repo, which should be treated as environment-specific and not a source-of-truth for project structure.
+- The Flask UI keeps HTML inline in `app.py` rather than using template files.
+- Data artifacts and generated outputs are committed into the repo.
+
+What Looks Canonical vs Non-Canonical
+Canonical enough to trust first
+- `app.py`
+- `docker-compose.yml`
+- `utils/collate_data.py`
+- `utils/extract_eval.py`
+- `utils/ingest_to_solr.py`
+- `data/output/master_corpus.json`
+- `classifiers/RunClassifiers.py`
+- `classifiers/RunPredictors.py`
+- `classifiers/*common.py`
+- `classifiers/preprocessing.py`
+
+Likely prototypes, one-offs, or partially stale
+- `scrapers/scraper.py`
+- `scrapers/reddit_scraper.py`
+- `scrapers/linkedin_scraper.py`
+- parts of `scrapers/web_scraper.py`
+- some Twitter helper scripts under `scrapers/twitter/`
+
+Known Inconsistencies / Risks
+1. Solr core mismatch:
+   - Active app/infra uses `ev_reviews`
+   - Older scrapers use `opinion_engine`
+
+2. Input/output directory mismatch:
+   - `collate_data.py` reads from `data/`
+   - `web_scraper.py` writes to `data/raw`
+
+3. Training inconsistency:
+   - subjectivity model trains on preprocessed text
+   - polarity model appears to train on raw text despite generating `clean_text`
+
+4. Dependency reproducibility:
+   - no single explicit dependency file was found
+   - environment setup is currently implicit
+
+5. Search/classification disconnect:
+   - classifier outputs are not yet integrated back into Solr documents or Flask filters
+
+6. Mixed artifact/source boundaries:
+   - generated datasets, predictions, models, and reports live next to source code
+   - future refactors should preserve provenance carefully
+
+Recommended Mental Model For Future Work
+- Treat this repo as three loosely coupled subsystems:
+  1. corpus acquisition
+  2. retrieval/search
+  3. supervised text classification
+
+- When changing something, first decide which subsystem is actually authoritative.
+- Do not assume all scripts are part of the same current production path.
+- Prefer the JSON master-corpus workflow unless explicitly reviving the older direct-to-Solr scrapers.
+
+Safe Starting Points For Common Tasks
+If the task is "run the search engine"
+1. Start Docker Solr.
+2. Confirm `ev_reviews` exists.
+3. Rebuild corpus if needed with `utils/collate_data.py`.
+4. Reingest with `utils/ingest_to_solr.py`.
+5. Run `app.py`.
+
+If the task is "update dataset"
+1. Add or regenerate platform JSON files in `data/`.
+2. Rebuild `master_corpus.json`.
+3. Recreate eval split only if desired.
+4. Reingest into Solr.
+
+If the task is "work on ML"
+1. Inspect `classifiers/eval.xls` or its successor labeled file.
+2. Validate label columns and class balance.
+3. Check the raw-vs-clean-text inconsistency in polarity training before making performance claims.
+4. Retrain with `RunClassifiers.py`.
+5. Use `RunPredictors.py` for unlabeled batch inference.
+
+Future Maintenance Guidance
+When updating this file, prefer appending concise facts rather than rewriting history. Keep:
+- what changed
+- why it changed
+- which files are now authoritative
+- any new gotchas
+
+Change Log
+[2026-04-09]
+- Created this `context.txt` as a repository second-brain.
+- Documented the current canonical flow as `data/*.json` -> `utils/collate_data.py` -> `data/output/master_corpus.json` -> `utils/ingest_to_solr.py` -> Solr `ev_reviews` -> `app.py`.
+- Recorded current master corpus size as 10368 rows and noted the 1000-row eval split.
+- Flagged major mismatches: `ev_reviews` vs `opinion_engine`, `data/` vs `data/raw`, and classifier preprocessing inconsistency in polarity training.
+
+Template For Future Entries
+[YYYY-MM-DD]
+- Summary:
+- Files changed:
+- New canonical path or behavior:
+- Risks / follow-up:
