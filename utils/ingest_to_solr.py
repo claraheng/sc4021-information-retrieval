@@ -6,7 +6,7 @@ import os
 SOLR_URL = 'http://localhost:8983/solr/ev_reviews'
 solr = pysolr.Solr(SOLR_URL, always_commit=True)
 
-MASTER_JSON_PATH = os.path.join(os.path.dirname(__file__), '../data/output/labeled_master_corpus.json')
+MASTER_JSON_PATH = os.path.join(os.path.dirname(__file__), '../data/output/labeled_master_corpus_v2.json')
 
 def ingest_data():
     if not os.path.exists(MASTER_JSON_PATH):
