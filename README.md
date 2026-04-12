@@ -132,6 +132,11 @@ If you need to rebuild corpus artifacts from raw platform JSON files:
 
 	   python utils/ingest_to_solr.py
 
+## Credits
+
+- YouTube data scraping support was adapted with reference to [yt-comments-extractor by vijaykumarpeta](https://github.com/vijaykumarpeta/yt-comments-extractor#).
+- Please refer to the source repository for upstream usage details and license terms.
+
 ## Troubleshooting
 
 - Solr connection errors:
