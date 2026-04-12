@@ -20,7 +20,7 @@ This project implements an EV opinion search engine pipeline end-to-end:
 - `app.py`: Flask search application (runs on port 8080)
 - `docker-compose.yml`: Solr service (`ev_reviews` core)
 - `data/`: raw and processed data files
-- `data/output/labeled_master_corpus_v2.json`: main labeled corpus currently used for ingestion/benchmarking
+- `data/output/labeled_master_corpus.json`: main labeled corpus currently used for ingestion/benchmarking
 - `utils/ingest_to_solr.py`: loads labeled corpus into Solr
 - `utils/collate_data.py`: merges and normalizes platform JSON files into `data/output/master_corpus.json`
 - `utils/extract_eval.py`: samples evaluation workspace from corpus
@@ -70,7 +70,7 @@ The compose file pre-creates the core:
 	python utils/ingest_to_solr.py
 
 This script loads:
-- `data/output/labeled_master_corpus_v2.json`
+- `data/output/labeled_master_corpus.json`
 
 ### 4) Run the Flask app
 
@@ -101,14 +101,14 @@ Useful flags:
 
 ### Combined inference benchmark (subjectivity -> polarity routing)
 
-	python classifiers/benchmark_scalability.py --master-corpus data/output/labeled_master_corpus_v2.json
+	python classifiers/benchmark_scalability.py --master-corpus data/output/labeled_master_corpus.json
 
 Default tested record counts are:
 - 500,1000,2000,5000,8000,10000
 
 To test larger counts:
 
-	python classifiers/benchmark_scalability.py --master-corpus data/output/labeled_master_corpus_v2.json --sizes 1,2,3,4,5,6
+	python classifiers/benchmark_scalability.py --master-corpus data/output/labeled_master_corpus.json --sizes 1,2,3,4,5,6
 
 Outputs:
 - `classifiers/scalability_results.csv`
