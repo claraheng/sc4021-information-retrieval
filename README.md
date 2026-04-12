@@ -155,4 +155,4 @@ Recommended day-to-day run order:
 For ML experiments:
 
 1. `python classifiers/run_pipeline.py --retrain`
-2. `python classifiers/benchmark_scalability.py --master-corpus data/output/labeled_master_corpus_v2.json`
+2. `python classifiers/benchmark_scalability.py --master-corpus data/output/labeled_master_corpus.json`
