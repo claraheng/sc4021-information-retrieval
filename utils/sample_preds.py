@@ -5,7 +5,7 @@ from pathlib import Path
 UTILS_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = UTILS_DIR.parent
 DATA_DIR = PROJECT_ROOT / "data" / "output"
-PREDICTIONS_FILE = DATA_DIR / "predictions.csv"
+PREDICTIONS_FILE = DATA_DIR / "base-predictions.csv"
 SAMPLE_FILE = DATA_DIR / "sample_preds.csv"
 
 def sample_predictions(n=100):
